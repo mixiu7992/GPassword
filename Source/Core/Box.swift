@@ -192,6 +192,65 @@ open class Box: UIView {
 
     /// Deal no touches
     private func noMoreTouches() {
+//        currentPoint = points.last?.position
+//        points.forEach { (point) in
+//            point.selected = false
+//            point.angle = 9999
+//        }
+//        points.removeAll()
+//        lineLayer.removeFromSuperlayer()
+        // tell delegate touch end
+        guard let delegate = self.delegate else { return }
+        delegate.touchesEnded()
+    }
+    
+    // MARK: - white custom
+    private func updateLines(_ color: UIColor) {
+        if points.isEmpty { return }
+        let linePath = UIBezierPath()
+        linePath.lineCapStyle = .round
+        linePath.lineJoinStyle = .round
+        lineLayer.strokeColor = color.cgColor
+        lineLayer.fillColor = nil
+        lineLayer.lineWidth = globalOptions.connectLineWidth
+        
+        points.enumerated().forEach { (offset, element) in
+            let pointCenter = element.position
+            if offset == 0 {
+                linePath.move(to: pointCenter)
+            } else {
+                linePath.addLine(to: pointCenter)
+            }
+        }
+        
+        if let current = currentPoint {
+            linePath.addLine(to: current)
+        }
+        lineLayer.path = linePath.cgPath
+        lineLayer.removeFromSuperlayer()
+        if globalOptions.connectLineStart == .center {
+            layer.addSublayer(lineLayer)
+        } else {
+            layer.insertSublayer(lineLayer, at: 0)
+        }
+    }
+    
+    public func setPassword(_ pwd: [String]) {
+        let sublayers = getAllPoints()
+        let selectedPoint = sublayers.filter { [weak self] (point) -> Bool in
+            guard let `self` = self else {
+                return false
+            }
+            return pwd.contains("\(point.tag)")
+        }
+        self.points = selectedPoint
+        self.points.forEach { point in
+            point.selected = true
+        }
+        drawLines()
+    }
+    
+    public func resetState() {
         currentPoint = points.last?.position
         points.forEach { (point) in
             point.selected = false
@@ -199,8 +258,17 @@ open class Box: UIView {
         }
         points.removeAll()
         lineLayer.removeFromSuperlayer()
-        // tell delegate touch end
-        guard let delegate = self.delegate else { return }
-        delegate.touchesEnded()
+    }
+    
+    func getAllPoints() -> [Point] {
+        return layer.sublayers?.filter { $0 is Point }.map { $0 as! Point } ?? []
+    }
+    
+    public func updateBox(_ color: UIColor) {
+        updateLines(color)
+        let sublayers = getAllPoints()
+        for point in sublayers {
+            point.updatePoint(color)
+        }
     }
 }

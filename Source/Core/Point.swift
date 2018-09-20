@@ -193,4 +193,44 @@ class Point: CAShapeLayer {
         triangleLayer.transform = transform
         addSublayer(triangleLayer)
     }
+
+    // MARK: - white custom
+    func updatePoint(_ color: UIColor) {
+        let innerSelected: Shape = {
+            let rectWH = bounds.width * globalOptions.scale
+            let rectXY = bounds.width * (1 - globalOptions.scale) * 0.5
+            let rect =  CGRect(x: rectXY, y: rectXY, width: rectWH, height: rectWH)
+            let inner = Shape(fillColor: color,
+                              rect: rect,
+                              stroke: globalOptions.isInnerStroke,
+                              strokeColor: globalOptions.innerStrokeColor)
+            return inner
+        }()
+        
+        let outerSelected: Shape = {
+            let sizeWH = bounds.width - 2 * globalOptions.pointLineWidth
+            let originXY = globalOptions.pointLineWidth
+            let rect = CGRect(x: originXY, y: originXY, width: sizeWH, height: sizeWH)
+            let outer = Shape(fillColor: color.withAlphaComponent(0.1),
+                              rect: rect,
+                              stroke: globalOptions.isOuterStroke,
+                              strokeColor: globalOptions.outerStrokeColor)
+            return outer
+        }()
+        
+        sublayers?.removeAll()
+        if selected {
+            drawShape(outerSelected)
+            drawShape(innerSelected)
+            if globalOptions.isDrawTriangle {
+                drawTriangle(innerTriangle)
+            }
+        } else {
+            if globalOptions.normalstyle == .innerFill {
+                drawShape(innerNormal)
+            } else {
+                drawShape(outerStroke)
+            }
+        }
+    }
 }
